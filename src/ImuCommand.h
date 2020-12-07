@@ -85,7 +85,7 @@
 
 
 
-
+extern ros::Publisher msg_pub;
 namespace IPSG
 {   
     
@@ -171,6 +171,8 @@ namespace IPSG
         unsigned char                cmd_buffer[cmd_num];
         unsigned char     mulit_cmd_buffer[mulitCmd_num];
         unsigned char          r_buffer[READ_BUFFERSIZE];
+        unsigned char          r_buffer_helper[26];
+        unsigned char          *r_buffer_handled=NULL;
         double                        EULAR[DATA_LENGTH];
         double              read_buffer[READ_BUFFERSIZE];
         double                          GYR[DATA_LENGTH];

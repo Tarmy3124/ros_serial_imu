@@ -1,6 +1,6 @@
 #include"ImuCommand.h"
 
-
+ros::Publisher msg_pub;
 bool IPSG::CImuCommand::display_decodeData(double *tmpBuffer)
 {
     for(int i = 0;i < DATA_LENGTH;i ++)
@@ -42,7 +42,8 @@ bool IPSG::CImuCommand::decodeFrame(unsigned char tmpBuffer[READ_BUFFERSIZE])
 {
     if(tmpBuffer[0] == DATA_FrameHead && tmpBuffer[1] == DATA_FrameHead)
     {
-        imu_data.header.frame_id = "world";
+        imu_data.header.frame_id = "imu_link";
+ 	imu_data.header.stamp = ros::Time::now();
         switch(tmpBuffer[2])
         {
             case DATA_TYPE_Q4:  //该帧输出数据为四元数类型
@@ -71,7 +72,7 @@ bool IPSG::CImuCommand::decodeFrame(unsigned char tmpBuffer[READ_BUFFERSIZE])
                     imu_data.angular_velocity.x = (GYR[0]/16.04*M_PI/180);
                     imu_data.angular_velocity.y = (GYR[1]/16.04*M_PI/180);
                     imu_data.angular_velocity.z = (GYR[2]/16.04*M_PI/180);
-                    
+
                     break;
                 }
 
@@ -113,6 +114,7 @@ bool IPSG::CImuCommand::decodeFrame(unsigned char tmpBuffer[READ_BUFFERSIZE])
         std::cout<<"数据帧头错误"<<std::endl;
         return false;
     }
+                msg_pub.publish(imu_data);
     return true;
 }
 
@@ -125,8 +127,20 @@ bool IPSG::CImuCommand::cmdFrame(unsigned char imucmd)
     //return commd_buffer;
 
     //ser.write(cmd_buffer,cmd_num);
-    
+    int i=0;
     ser.read(r_buffer,READ_BUFFERSIZE);
+    if(r_buffer[12]!=DATA_TYPE_STOP)
+    {
+      for (;i<26;i++)
+     {
+      if(r_buffer[i]=DATA_TYPE_STOP)break;
+
+     }
+    ser.read(r_buffer_helper,READ_BUFFERSIZE+i+1);
+    r_buffer_handled=(&r_buffer_helper[i+1]);
+    decodeFrame(r_buffer_handled);
+   ROS_INFO("The message was truncated");
+    }else
     decodeFrame(r_buffer);
     return true;
 }
@@ -135,11 +149,11 @@ bool IPSG::CImuCommand::cmdFrame(unsigned char imucmd)
 bool IPSG::CImuCommand::muliteCmdFrame(unsigned char imucmd1,unsigned char imucmd2,unsigned char imucmd3)
 {
     //第一个指令
-    cmdFrame(imucmd1);
-    ROS_INFO("OUTPUT_Q4");   //如何输出宏定义的名字？？？？
+   // cmdFrame(imucmd1);
+    //ROS_INFO("OUTPUT_Q4");   //如何输出宏定义的名字？？？？
 
     //第二个指令
-    cmdFrame(imucmd2);
+    //cmdFrame(imucmd2);
     ROS_INFO("OUTPUT_GYR");
 
     //第三个指令
@@ -183,41 +197,18 @@ bool IPSG::CImuCommand::RUN()
     ros::NodeHandle nh;
 
    // ros::Subscriber write_sub = nh.subscribe("write", 1000, write_callback);
-    ros::Publisher msg_pub = nh.advertise<sensor_msgs::Imu>("imumsg", 1000);
+    msg_pub = nh.advertise<sensor_msgs::Imu>("imu", 100);
 
     //串口初始化
     serialInit();
-    ros::Rate loop_rate(300);
+    ros::Rate loop_rate(500);
     while(ros::ok())
     {
-        //serial_msgs::serial msg;
-        
-        //ros::spinOnce();
-        //ROS_INFO_STREAM("0000");
-        // if(ser.available())
-        //{
-            //ROS_INFO_STREAM("11111");
-            muliteCmdFrame(CMD_PULL_OUTPUT_Q4,CMD_PULL_OUTPUT_GYR,CMD_PULL_OUTPUT_ACC);
-            ser.read(r_buffer,READ_BUFFERSIZE);
-            decodeFrame(r_buffer);
-            display_Imumsg(imu_data);
-            msg_pub.publish(imu_data);
-            /*
-            ROS_INFO("Reading from serial port");
-            ser.read(r_buffer,rBUFFERSIZE);
-            for(int i=0;i<rBUFFERSIZE;i++)
-            {
-                ROS_INFO("[0x%02x]",r_buffer[i]);
-            }
-            ROS_INFO_STREAM("End reading from serial port");
 
-                for(int l=0;l<rBUFFERSIZE;l++)
-                {
-                    msg.serial.push_back(r_buffer[l]);
-                    msg_pub.publish(msg);*/
-        /*  for(int j=0;j<rBUFFERSIZE;j++)
-         * ROS_INFO("[0x%02x]",msg.serial[j]);*/
-        //}
+            muliteCmdFrame(CMD_PULL_OUTPUT_Q4,CMD_PULL_OUTPUT_GYR,CMD_PULL_OUTPUT_ACC);
+            display_Imumsg(imu_data);
+            //msg_pub.publish(imu_data);
+            ros::spinOnce();
             loop_rate.sleep();
     }
 
