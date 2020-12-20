@@ -82,9 +82,9 @@ bool IPSG::CImuCommand::decodeFrame(unsigned char tmpBuffer[READ_BUFFERSIZE])
                      ACC[1] = (short)((uint16_t)tmpBuffer[6]<<8|tmpBuffer[7]);
                      ACC[2] = (short)((uint16_t)tmpBuffer[8]<<8|tmpBuffer[9]);
                      display_decodeData(ACC);
-                     imu_data.linear_acceleration.x = (ACC[0]/2048*9.98);
-                     imu_data.linear_acceleration.y = (ACC[1]/2048*9.98);
-                     imu_data.linear_acceleration.z = (ACC[2]/2048*9.98);
+                     imu_data.linear_acceleration.x = (ACC[0]/2048*9.7949);
+                     imu_data.linear_acceleration.y = (ACC[1]/2048*9.7949);
+                     imu_data.linear_acceleration.z = (ACC[2]/2048*9.7949);
                      
                      break;
                  } 
@@ -136,7 +136,7 @@ bool IPSG::CImuCommand::cmdFrame(unsigned char imucmd)
       if(r_buffer[i]=DATA_TYPE_STOP)break;
 
      }
-    ser.read(r_buffer_helper,READ_BUFFERSIZE+i+1);
+    ser.read(r_buffer_helper,READ_BUFFERSIZE+i+1);   //解决ROS处理IMU速度不够快丢帧问题
     r_buffer_handled=(&r_buffer_helper[i+1]);
     decodeFrame(r_buffer_handled);
    ROS_INFO("The message was truncated");
@@ -197,7 +197,7 @@ bool IPSG::CImuCommand::RUN()
     ros::NodeHandle nh;
 
    // ros::Subscriber write_sub = nh.subscribe("write", 1000, write_callback);
-    msg_pub = nh.advertise<sensor_msgs::Imu>("imu", 100);
+    msg_pub = nh.advertise<sensor_msgs::Imu>("imu_raw", 100);
 
     //串口初始化
     serialInit();

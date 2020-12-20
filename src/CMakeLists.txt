@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(serial_msgs)
+project(serial_sago)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -64,8 +64,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy message_generation std_msgs
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+   DEPENDENCIES
+   std_msgs  # Or other packages containing msgs
  )
 
 ################################################
@@ -104,8 +104,8 @@ catkin_package(
     message_runtime
     serial
     std_msgs
-	roscpp 
-	rospy 
+    roscpp 
+    rospy 
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -114,20 +114,18 @@ include_directories(
 )
 
 
-add_executable(talker talker.cpp)
-target_link_libraries(talker ${catkin_LIBRARIES})
 
 
-add_executable(serial_example_node1 serial_example_node1.cpp ImuCommand.cpp)
 
-add_executable(listen1 listen1.cpp)
-target_link_libraries(listen1 ${catkin_LIBRARIES})
+add_executable(sago_imu serial_example_node1.cpp ImuCommand.cpp)
 
-target_link_libraries(serial_example_node1  ${catkin_LIBRARIES})
 
-add_dependencies(listen1 serial_msgs_gencpp)
-add_dependencies(serial_example_node1 serial_msgs_gencpp)
-add_dependencies(talker serial_msgs_gencpp)
+
+target_link_libraries(sago_imu  ${catkin_LIBRARIES})
+
+
+add_dependencies(sago_imu serial_msgs_gencpp)
+
 
 ###########
 ## Build ##
